@@ -1,0 +1,22 @@
+{
+  "name": "whosthere-server",
+  "version": "0.1.0",
+  "description": "Who's There - A example application to demonstrate calling with video preview using OpenTok",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r dotenv/config index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ankur Oberoi <aoberoi@gmail.com> (https://aoberoi.me/)",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^2.0.0",
+    "express": "^4.13.4",
+    "fcm-push": "^1.0.5",
+    "firebase": "^3.0.3",
+    "lodash.clonedeep": "^4.3.2",
+    "lodash.set": "^4.2.0",
+    "lodash.unset": "^4.4.0",
+    "opentok": "^2.3.2"
+  }
+}
