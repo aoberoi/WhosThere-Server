@@ -29,6 +29,7 @@ function createOpenTokSession() {
       if (error) {
         reject(new Error('could not create opentok session'));
       } else {
+        console.log('opentok session created', session.sessionId);
         resolve(session);
       }
     })
@@ -58,6 +59,7 @@ function deviceTokenFromUserId(userId) {
       if (!deviceToken) {
         reject(new Error('user not found'));
       } else {
+        console.log('device token retrieved', userId, deviceToken);
         resolve(deviceToken);
       }
     });
@@ -82,14 +84,25 @@ function sendDataMessage(device, data) {
   });
 }
 
-function filterOutPath(obj, path) {
+function cpAndSet(obj, path, value) {
   const objCopy = cloneDeep(obj);
-  unset(objCopy, path);
+  set(objCopy, path, value)
   return objCopy;
+}
+
+function addIdentityToCallMessage(callMessage, key, userId, opentokSession) {
+  return cpAndSet(
+    cpAndSet(callMessage, `${key}.id`, userId),
+    `${key}.opentokToken`,
+    opentokSession.generateToken({
+      data: JSON.stringify({ userId: userId })
+    })
+  );
 }
 
 callRequests.on('child_added', newRequestSnapshot => {
   const newCallRequest = newRequestSnapshot.val();
+  const newCallRequestId = newRequestSnapshot.key;
   console.log('new call request', newCallRequest);
 
   // As soon as this call request is acknowledged by this server, it is removed from the collection
@@ -106,27 +119,23 @@ callRequests.on('child_added', newRequestSnapshot => {
     // TODO: handle errors
     Promise.all([recipientDeviceTokenPromise, senderDeviceTokenPromise, opentokSessionPromise]).then(([recipientDeviceToken, senderDeviceToken, opentokSession]) => {
       const call = {
-        to: {
-          user: newCallRequest.to,
-          opentokToken: opentokSession.generateToken()
-        },
-        from: {
-          user: newCallRequest.from,
-          opentokToken: opentokSession.generateToken()
-        },
+        to: newCallRequest.to,
+        from: newCallRequest.from,
         opentokSession: opentokSession.sessionId,
         opentokKey,
         initiatedAt: newCallRequest.timestamp,
+        requestId: newCallRequestId,
       };
 
       // Save the call back to the database
       const newCallRef = calls.push(call);
       newCallRef.then((arg) => {
+        console.log('call created');
         // Send both parties an FCM message about the call
         const callMessage = set({}, newCallRef.key, call);
         Promise.all([
-          sendDataMessage(recipientDeviceToken, filterOutPath(callMessage, `${newCallRef.key}.from.opentokToken`)),
-          sendDataMessage(senderDeviceToken, filterOutPath(callMessage, `${newCallRef.key}.to.opentokToken`)),
+          sendDataMessage(recipientDeviceToken, addIdentityToCallMessage(callMessage, newCallRef.key, call.to, opentokSession)),
+          sendDataMessage(senderDeviceToken, addIdentityToCallMessage(callMessage, newCallRef.key, call.from, opentokSession))
         ]).catch(error => {
           // TODO: handle this more definitively (GC NotRegistered?)
           console.error(error);
