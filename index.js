@@ -57,7 +57,8 @@ function deviceTokenFromUserId(userId) {
     users.child(userId).once('value', userSnapshot => {
       const deviceToken = userSnapshot.val();
       if (!deviceToken) {
-        reject(new Error('user not found'));
+        console.error(`device token not found for userId: ${userId}`);
+        reject(new Error('device token not found'));
       } else {
         console.log('device token retrieved', userId, deviceToken);
         resolve(deviceToken);
@@ -105,44 +106,49 @@ callRequests.on('child_added', newRequestSnapshot => {
   const newCallRequestId = newRequestSnapshot.key;
   console.log('new call request', newCallRequest);
 
-  // As soon as this call request is acknowledged by this server, it is removed from the collection
-  // TODO: handle errors
-  newRequestSnapshot.ref.remove().then(() => {
+  // Look up device token values needed to address the FCM messages
+  const recipientDeviceTokenPromise = deviceTokenFromUserId(newCallRequest.to);
+  const senderDeviceTokenPromise = deviceTokenFromUserId(newCallRequest.from);
 
-    // Look up device token values needed to address the FCM messages
-    const recipientDeviceTokenPromise = deviceTokenFromUserId(newCallRequest.to);
-    const senderDeviceTokenPromise = deviceTokenFromUserId(newCallRequest.from);
-
-    // Create an OpenTok session for this call
-    const opentokSessionPromise = createOpenTokSession();
-
+  Promise.all([recipientDeviceTokenPromise, senderDeviceTokenPromise]).then(([recipientDeviceToken, senderDeviceToken]) => {
+    // As soon as this call request is acknowledged by this server, it is removed from the collection
     // TODO: handle errors
-    Promise.all([recipientDeviceTokenPromise, senderDeviceTokenPromise, opentokSessionPromise]).then(([recipientDeviceToken, senderDeviceToken, opentokSession]) => {
-      const call = {
-        to: newCallRequest.to,
-        from: newCallRequest.from,
-        opentokSession: opentokSession.sessionId,
-        opentokKey,
-        initiatedAt: newCallRequest.timestamp,
-        requestId: newCallRequestId,
-      };
+    newRequestSnapshot.ref.remove().then(() => {
 
-      // Save the call back to the database
-      const newCallRef = calls.push(call);
-      newCallRef.then((arg) => {
-        console.log('call created');
-        // Send both parties an FCM message about the call
-        const callMessage = set({}, newCallRef.key, call);
-        Promise.all([
-          sendDataMessage(recipientDeviceToken, addIdentityToCallMessage(callMessage, newCallRef.key, call.to, opentokSession)),
-          sendDataMessage(senderDeviceToken, addIdentityToCallMessage(callMessage, newCallRef.key, call.from, opentokSession))
-        ]).catch(error => {
-          // TODO: handle this more definitively (GC NotRegistered?)
-          console.error(error);
-        })
+      // Create an OpenTok session for this call
+      // TODO: handle errors
+      createOpenTokSession().then(opentokSession => {
+        const call = {
+          to: newCallRequest.to,
+          from: newCallRequest.from,
+          opentokSession: opentokSession.sessionId,
+          opentokKey,
+          initiatedAt: newCallRequest.timestamp,
+          requestId: newCallRequestId,
+        };
+
+        // Save the call back to the database
+        const newCallRef = calls.push(call);
+        newCallRef.then((arg) => {
+          console.log('call created');
+          // Send both parties an FCM message about the call
+          const callMessage = set({}, newCallRef.key, call);
+          Promise.all([
+            sendDataMessage(recipientDeviceToken, addIdentityToCallMessage(callMessage, newCallRef.key, call.to, opentokSession)),
+            sendDataMessage(senderDeviceToken, addIdentityToCallMessage(callMessage, newCallRef.key, call.from, opentokSession))
+          ]).catch(error => {
+            // TODO: handle this more definitively (GC NotRegistered?)
+            console.error(error);
+          })
+        });
       });
     });
+  }, (reason) => {
+    // TODO: retry?
+    console.log(`Device token(s) not found for call request: ${newCallRequestId}`);
   });
+
+
 });
 
 /**
