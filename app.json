@@ -1,0 +1,23 @@
+{
+  "name": "Who's There (Server)",
+  "description": "A component of the Who's There sample video calling service.",
+  "repository": "https://github.com/aoberoi/WhosThere-Server",
+  "keywords": ["video", "voice", "calling", "opentok", "firebase", "Who's There"],
+  "env": {
+    "OPENTOK_KEY": {
+      "description": "A Project API Key from your TokBox Account"
+    },
+    "OPENTOK_SECRET": {
+      "description": "The Project API Secret from your TokBox Account"
+    },
+    "FIREBASE_URL": {
+      "description": "The Firebase Database URL for your Firebase Project"
+    },
+    "FIREBASE_SERVER_KEY": {
+      "description": "The Firebase Cloud Messaging server key for your Firebase Project"
+    },
+    "FIREBASE_SERVICE_ACCOUNT": {
+      "description": "The Service Account JSON data for your Firebase Project"
+    }
+  }
+}

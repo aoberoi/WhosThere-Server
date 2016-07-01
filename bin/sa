@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const shellEscape = require('shell-escape');
+const serviceAccount = require('../serviceAccount');
+
+console.log(shellEscape([JSON.stringify(serviceAccount)]));
