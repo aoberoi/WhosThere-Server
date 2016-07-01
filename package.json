@@ -1,8 +1,11 @@
 {
   "name": "whosthere-server",
   "version": "0.1.0",
-  "description": "Who's There - A example application to demonstrate calling with video preview using OpenTok",
+  "description": "Who's There (Server) - a sample video calling application built using the OpenTok communications platform from TokBox",
   "main": "index.js",
+  "engines": {
+    "node": "6.x"
+  },
   "scripts": {
     "start": "node -r dotenv/config index.js",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -40,10 +40,18 @@ function createOpenTokSession() {
 /**
  * Firebase initialization
  */
+
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} catch (ex) {
+  console.error(`Could not parse FIREBASE_SERVICE_ACCOUNT environment variable as JSON: ${ex.message}`);
+  throw ex;
+}
+
 firebase.initializeApp({
   databaseURL: process.env.FIREBASE_URL,
-  // TODO: figure out how this can be done without hitting the filesystem (for deployment targets like Heroku)
-  serviceAccount: 'serviceAccount.json'
+  serviceAccount,
 });
 const fcm = new FCM(process.env.FIREBASE_SERVER_KEY);
 
