@@ -89,10 +89,11 @@ a copy of this file named `.env`, and then fill in the missing values within you
 
 ### Deployment
 
-For your convenience, this component can be deployed with one click using the Heroku Button:
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy).
+For your convenience, this component can be deployed to Heroku with one click:
 
-Fill in the Config Vars with the values obtained from the [instructions above](#configuration).
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+Fill in the Config Variables with the values obtained from the [instructions above](#configuration).
 
 **Note**: Deploying to Heroku requires [signing up for a Heroku Account](https://signup.heroku.com).
 This is great for trying out Who's There because its free for low usage.
